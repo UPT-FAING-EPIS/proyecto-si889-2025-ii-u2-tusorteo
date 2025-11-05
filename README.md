@@ -1,11 +1,10 @@
-# 🎯 TuSorteo - Plataforma de Sorteos Interactivos en Vivo
+# 🎯 TuSorteo - Plataforma de Sorteos Interactivos
 
 <div align="center">
 
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black?style=for-the-badge&logo=next.js)
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)
-![Firebase](https://img.shields.io/badge/Firebase-12.4.0-FFCA28?style=for-the-badge&logo=firebase)
 ![Supabase](https://img.shields.io/badge/Supabase-2.58.0-3ECF8E?style=for-the-badge&logo=supabase)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=for-the-badge&logo=tailwind-css)
 
@@ -13,12 +12,19 @@
 
 ---
 
-## 👥 Equipo
+## 🎓 Universidad Privada de Tacna
+**Facultad de Ingeniería - Escuela Profesional de Ingeniería de Sistemas**
 
-**Universidad Privada de Tacna**  
-Facultad de Ingeniería - EPIS  
-Curso: SI889 - Patrones de Diseño  
-Periodo: 2025-II
+**Curso:** Patrones de Software  
+**Docente:** Mag. Patrick Cuadros Quiroga
+
+
+---
+
+## 👥 Integrantes del Equipo
+- **Ancco Suaña, Bruno Enrique** (2023077472)
+- **Camac Melendez, Cesar Nikolas** (2022074262)
+- **Rivera Muñoz, Augusto Joaquin** (2022073505)
 
 ---
 
@@ -105,81 +111,6 @@ Periodo: 2025-II
 - **[Supabase 2.58.0](https://supabase.com/)** - Backend para autenticación
   - Auth - Gestión de usuarios
   - Database - PostgreSQL para datos de usuarios
-
-### Herramientas de Desarrollo
-
-- **[ESLint 9](https://eslint.org/)** - Linter de código
-- **[PostCSS](https://postcss.org/)** - Procesador de CSS
-- **PWsh** - PowerShell como shell por defecto
-
----
-
-## 🏗️ Arquitectura
-
-### Arquitectura de Alto Nivel
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Next.js App Router                   │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │
-│  │   Landing    │  │     Auth     │  │  Live Draw  │  │
-│  │     Page     │  │   (Login/    │  │  (Host/     │  │
-│  │              │  │   Register)  │  │  Participant)│  │
-│  └──────────────┘  └──────────────┘  └─────────────┘  │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│                    Custom Hooks Layer                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  │
-│  │  useGetUser  │  │   useLogin   │  │ useLiveDraw │  │
-│  │  useLogout   │  │ useRegister  │  │   Host/     │  │
-│  │              │  │              │  │ Participant │  │
-│  └──────────────┘  └──────────────┘  └─────────────┘  │
-├─────────────────────────────────────────────────────────┤
-│                    Services Layer                       │
-│  ┌──────────────┐  ┌──────────────┐                    │
-│  │   authService│  │ liveDrawService│                   │
-│  │  (Supabase)  │  │  (Firebase)  │                    │
-│  └──────────────┘  └──────────────┘                    │
-├─────────────────────────────────────────────────────────┤
-│                 External Services                       │
-│  ┌─────────────────┐    ┌─────────────────┐           │
-│  │    Supabase     │    │    Firebase     │           │
-│  │   PostgreSQL    │    │    Firestore    │           │
-│  │   + Auth        │    │   (Realtime)    │           │
-│  └─────────────────┘    └─────────────────┘           │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Flujo de Datos - Sorteo en Vivo
-
-```
-Host                          Firebase                    Participant
-  │                              │                             │
-  ├─ 1. createLiveDraw() ───────>│                             │
-  │                              ├─ Genera PIN (6 dígitos)    │
-  │                              ├─ Crea documento            │
-  │<─────── drawId + PIN ────────┤                             │
-  │                              │                             │
-  ├─ 2. startDraw() ────────────>│                             │
-  │                              ├─ status: 'running'          │
-  │                              │                             │
-  │                              │<─── 3. joinDraw(PIN) ───────┤
-  │                              ├─ Agrega participante        │
-  │                              │                             │
-  ├─ 4. onSnapshot() ───────────>│─────── onSnapshot() ───────>│
-  │<─ Actualización en RT ───────┤──── Actualización en RT ───>│
-  │   (nuevo participante)       │     (status, participantes) │
-  │                              │                             │
-  ├─ 5. pickWinner() ───────────>│                             │
-  │                              ├─ Actualiza 'currentWin'     │
-  │<─────── winner ──────────────┤──────── winner ────────────>│
-  │                              │                             │
-  ├─ 6. finishDraw() ───────────>│                             │
-  │                              ├─ status: 'finished'         │
-  │<────── Cierra ───────────────┤──────── Notifica ──────────>│
-```
 
 ---
 
