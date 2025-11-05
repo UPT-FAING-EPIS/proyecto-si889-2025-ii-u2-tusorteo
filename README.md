@@ -18,7 +18,6 @@
 **Curso:** Patrones de Software  
 **Docente:** Mag. Patrick Cuadros Quiroga
 
-
 ---
 
 ## 👥 Integrantes del Equipo
@@ -30,7 +29,17 @@
 
 ## 🎨 Acerca del Proyecto
 
-**TuSorteo** es una plataforma web moderna diseñada para crear y gestionar sorteos interactivos en tiempo real. Permite a los organizadores crear sorteos transparentes y justos, mientras que los participantes pueden unirse mediante un código PIN y ver los resultados en vivo.
+**TuSorteo** es una aplicación web diseñada para facilitar la creación y gestión de sorteos simples y dinámicos, orientada específicamente a concursos presenciales. El sistema permite a los organizadores configurar los sorteos, mientras que los participantes pueden unirse registrándose o utilizando un código de sorteo generado. La plataforma soporta la selección de un único ganador o de una determinada cantidad de ganadores. Al ser una aplicación web, está optimizada con un diseño adaptativo para funcionar correctamente en dispositivos móviles.
+
+## 🎯 Objetivo
+- Desarrollar e implementar una plataforma web (TuSorteo) que automatice, simplifique y dinamice la gestión de sorteos para eventos y concursos presenciales.
+
+## 🎯 Objetivos Especificos
+- Crear un módulo de autenticación y gestión de usuarios para los organizadores de sorteos.
+- Implementar la funcionalidad de creación de sorteos, permitiendo la configuración de uno o "n" ganadores.
+- Asegurar que la interfaz de usuario sea completamente adaptativa (responsive) para una correcta visualización y uso en dispositivos móviles.
+- Implementar la lógica de selección aleatoria de ganadores de forma transparente y fiable.
+
 
 ### ✨ Puntos Destacados
 
@@ -89,28 +98,6 @@
   - Feedback visual
   - Estados de carga
   - Manejo de errores
-
----
-
-## 🛠️ Tecnologías
-
-### Frontend
-
-- **[Next.js 15.5.3](https://nextjs.org/)** - Framework React con App Router
-- **[React 19.1.0](https://react.dev/)** - Biblioteca de UI
-- **[TypeScript 5](https://www.typescriptlang.org/)** - Tipado estático
-- **[Tailwind CSS 4](https://tailwindcss.com/)** - Framework de utilidades CSS
-- **[Turbopack](https://turbo.build/)** - Bundler ultra-rápido para desarrollo
-
-### Backend & Servicios
-
-- **[Firebase 12.4.0](https://firebase.google.com/)** - Backend para sorteos en tiempo real
-  - Firestore - Base de datos NoSQL en tiempo real
-  - Realtime listeners
-  - Transacciones atómicas
-- **[Supabase 2.58.0](https://supabase.com/)** - Backend para autenticación
-  - Auth - Gestión de usuarios
-  - Database - PostgreSQL para datos de usuarios
 
 ---
 
@@ -364,39 +351,3 @@ proyecto-si889-2025-ii-u2-tusorteo/
 ├── REFACTOR_JOIN_LIVE_DRAW.md       # Documentación de refactorización
 └── REFACTOR_LAYOUT.md               # Documentación de refactorización
 ```
-
----
-
-## 🎯 Patrones de Diseño
-
-### 1. **Custom Hooks Pattern**
-Los hooks personalizados encapsulan la lógica de negocio y estado:
-
-- `useGetUser`: Gestión del estado del usuario autenticado
-- `useLiveDraw`: Lógica compartida de sorteos en vivo
-- `useLiveDrawHost`: Lógica específica para organizadores
-- `useLiveDrawParticipant`: Lógica específica para participantes
-
-### 2. **Service Layer Pattern**
-Los servicios abstraen las llamadas a API externas:
-
-- `authService.ts`: Operaciones de autenticación con Supabase
-- `liveDrawService.ts`: Operaciones CRUD con Firebase Firestore
-- `getUserService.ts`: Obtención de datos de usuario
-
-### 3. **Component Composition**
-Componentes reutilizables con props tipadas:
-
-- Cards modulares (`DrawCard`, `BenefitCard`, `ToolCard`)
-- Modales reutilizables (`WinnerModal`)
-- Layouts compartidos (`Header`, `Footer`)
-
-### 4. **State Management**
-- **Local State**: `useState` para estado de componentes
-- **Server State**: Firebase listeners para sincronización en tiempo real
-- **Persistent State**: `localStorage` para restauración de sesión
-
-### 5. **Error Handling**
-- Try-catch en servicios
-- Estados de error en hooks
-- Mensajes de error específicos en UI
