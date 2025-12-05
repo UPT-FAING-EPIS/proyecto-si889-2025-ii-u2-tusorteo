@@ -7,8 +7,10 @@ import type { LiveDraw } from "../services/liveDrawService";
 type JoinHandler = (pin: number, name: string) => Promise<void>;
 
 export function useLiveDrawParticipant() {
+  // Estado compartido del sorteo (desde useLiveDraw): estado y acciones del servicio
   const { loading, error, join, leave, draw, setDrawId, setDraw, joinByPin, restoreLastJoinedDraw } = useLiveDraw();
 
+  // Estado base del participante (local al hook / UX)
   const [joined, setJoined] = useState(false);
   const [restored, setRestored] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -20,6 +22,19 @@ export function useLiveDrawParticipant() {
   const hasBeenInParticipantsRef = useRef(false);
   // Último nonce de evento de ganador visto por este cliente (para disparar múltiples veces si vuelve a ganar)
   const lastWinNonceRef = useRef<number>(0);
+  // Flag local para evitar doble click / re-entradas concurrentes en handleJoin
+  const joiningRef = useRef<boolean>(false);
+
+  // Derivados
+  const didWin = useMemo(() => {
+    if (!joined || !draw?.winners || !joinedName) return false;
+    const me = joinedName.trim().toLowerCase();
+    return draw.winners.some(w => (w.name || '').trim().toLowerCase() === me);
+  }, [joined, draw?.winners, joinedName]);
+
+  const canShowParticipants = useMemo(() => {
+    return Boolean(draw && joined && draw.status !== 'finished' && draw.status !== 'cancelled');
+  }, [draw, joined]);
 
   // Efecto 1: Restauración inicial al montar (cliente)
   // - Se ejecuta una sola vez (hasta que "restored" sea true)
@@ -177,44 +192,75 @@ export function useLiveDrawParticipant() {
     lastWinNonceRef.current = nonce;
   }, [draw?.currentWin?.nonce, draw?.currentWin?.name, draw?.currentWin?.browserId, joined, joinedName]);
 
+  // Efecto 5: Abrir modal si el participante ganó (derivado didWin)
+  useEffect(() => {
+    if (didWin) {
+      setWinnerOpen(true);
+    }
+  }, [didWin]);
 
+
+  // Acciones
   const handleJoin: JoinHandler = async (pinValue, nameValue) => {
+    // Evitar doble click o llamadas concurrentes
+    if (joiningRef.current || loading) return;
+    joiningRef.current = true;
     setLocalError(null);
     setSuccessMsg(null);
     // Reset marcador de presencia
     hasBeenInParticipantsRef.current = false;
-  lastWinNonceRef.current = 0;
-    const liveDraw = await joinByPin(pinValue);
-    if (!liveDraw) {
-      setLocalError('PIN no encontrado. Verifica el número e inténtalo de nuevo.');
-      return;
-    }
-    const drawId = liveDraw.code;
-    setJoined(false);
-    setJoinedName(null);
+    lastWinNonceRef.current = 0;
     try {
-      const already = localStorage.getItem(`${JOINED_PREFIX}${drawId}`);
-      if (already === '1') {
-        setJoined(true);
-        const savedName = localStorage.getItem(`${JOINED_NAME_PREFIX}${drawId}`);
-        if (savedName) setJoinedName(savedName);
-        setSuccessMsg('Ya estás participando en este sorteo desde este navegador.');
+      const liveDraw = await joinByPin(pinValue);
+      if (!liveDraw) {
+        setLocalError('PIN no encontrado. Verifica el número e inténtalo de nuevo.');
         return;
       }
-    } catch {}
-    const browserId = getBrowserId();
-    const ok = await join(drawId, { name: nameValue.trim(), browserId });
-    if (ok && !error) {
-      setJoined(true);
-      setSuccessMsg('Te uniste al sorteo correctamente.');
+      const drawId = liveDraw.code;
+      setJoined(false);
+      setJoinedName(null);
+      // Si ya está unido desde este navegador, evitar re-intento
       try {
-        localStorage.setItem(`${JOINED_PREFIX}${drawId}`, '1');
-        localStorage.setItem(`${JOINED_NAME_PREFIX}${drawId}`, nameValue.trim());
-        localStorage.setItem(LAST_JOINED_KEY, drawId);
+        const already = localStorage.getItem(`${JOINED_PREFIX}${drawId}`);
+        if (already === '1') {
+          setJoined(true);
+          const savedName = localStorage.getItem(`${JOINED_NAME_PREFIX}${drawId}`);
+          if (savedName) setJoinedName(savedName);
+          setSuccessMsg('Ya estás participando en este sorteo desde este navegador.');
+          return;
+        }
       } catch {}
-      setJoinedName(nameValue.trim());
-    } else if (error) {
-      setLocalError(error);
+      const browserId = getBrowserId();
+      const { ok, error: joinError } = await join(drawId, { name: nameValue.trim(), browserId });
+      if (ok) {
+        setJoined(true);
+        setSuccessMsg('Te uniste al sorteo correctamente.');
+        try {
+          localStorage.setItem(`${JOINED_PREFIX}${drawId}`, '1');
+          localStorage.setItem(`${JOINED_NAME_PREFIX}${drawId}`, nameValue.trim());
+          localStorage.setItem(LAST_JOINED_KEY, drawId);
+        } catch {}
+        setJoinedName(nameValue.trim());
+        // Asegurar que no quede error global stale
+        setLocalError(null);
+      } else {
+        // Si el backend reporta duplicado pero ya quedamos unidos, no mostrar error
+        try {
+          const already = localStorage.getItem(`${JOINED_PREFIX}${drawId}`);
+          if (already === '1') {
+            setLocalError(null);
+            setSuccessMsg('Ya estás participando en este sorteo desde este navegador.');
+            setJoined(true);
+            const savedName = localStorage.getItem(`${JOINED_NAME_PREFIX}${drawId}`);
+            if (savedName) setJoinedName(savedName);
+            return;
+          }
+        } catch {}
+        // En otros casos, usar el mensaje explícito retornado por join
+        if (joinError) setLocalError(joinError);
+      }
+    } finally {
+      joiningRef.current = false;
     }
   };
 
@@ -239,7 +285,7 @@ export function useLiveDrawParticipant() {
         setSuccessMsg(null);
         setLocalError(null);
         hasBeenInParticipantsRef.current = false;
-  lastWinNonceRef.current = 0;
+        lastWinNonceRef.current = 0;
         // Desuscribir de actualizaciones de este sorteo y limpiar el estado para ocultar banners/ganadores
         setDrawId(null);
         setDraw(null as any);
@@ -251,23 +297,6 @@ export function useLiveDrawParticipant() {
       return false;
     }
   };
-
-  const didWin = useMemo(() => {
-    if (!joined || !draw?.winners || !joinedName) return false;
-    const me = joinedName.trim().toLowerCase();
-    return draw.winners.some(w => (w.name || '').trim().toLowerCase() === me);
-  }, [joined, draw?.winners, joinedName]);
-
-  const canShowParticipants = useMemo(() => {
-    return Boolean(draw && joined && draw.status !== 'finished' && draw.status !== 'cancelled');
-  }, [draw, joined]);
-
-  // Abrir modal si el participante ganó
-  useEffect(() => {
-    if (didWin) {
-      setWinnerOpen(true);
-    }
-  }, [didWin]);
 
   const closeWinnerModal = () => setWinnerOpen(false);
 

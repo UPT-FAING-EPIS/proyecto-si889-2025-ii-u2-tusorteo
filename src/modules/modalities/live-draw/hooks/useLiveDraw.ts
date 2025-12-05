@@ -2,11 +2,24 @@ import { useState, useEffect } from "react";
 import { createLiveDraw, addParticipant, LiveDraw, Participant, subscribeLiveDraw, cancelLiveDraw, findActiveDrawByCreator, updateLiveDrawStatus, removeParticipant, getLiveDraw, getLiveDrawByPin, addWinner } from "../services/liveDrawService";
 
 export function useLiveDraw() {
+  // Estado base
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawId, setDrawId] = useState<string | null>(null);
   const [draw, setDraw] = useState<LiveDraw | null>(null);
 
+  // Derivados (si aplica) — actualmente no hay derivados explícitos
+
+  // Efectos: suscripción en tiempo real al sorteo
+  useEffect(() => {
+    if (!drawId) return;
+    const unsubscribe = subscribeLiveDraw(drawId, (liveDraw: LiveDraw | null) => {
+      if (liveDraw) setDraw(liveDraw);
+    });
+    return () => unsubscribe();
+  }, [drawId]);
+
+  // Acciones
   async function create({ creatorId, name }: { creatorId: string; name: string }): Promise<void> {
     setLoading(true);
     setError(null);
@@ -92,7 +105,7 @@ export function useLiveDraw() {
 
   // Une a un participante al sorteo indicado. Si el hook aún no está suscrito a ese sorteo,
   // establece drawId para activar la suscripción y así actualizar "draw" automáticamente via onSnapshot.
-  async function join(id: string, participant: Participant): Promise<boolean> {
+  async function join(id: string, participant: Participant): Promise<{ ok: boolean; error?: string }> {
     setLoading(true);
     setError(null);
     try {
@@ -101,14 +114,16 @@ export function useLiveDraw() {
         setDrawId(id);
       }
       await addParticipant(id, participant);
-      // El estado "draw" se actualizará automáticamente por onSnapshot (ver useEffect de abajo)
+      // El estado "draw" se actualizará automáticamente por onSnapshot (ver useEffect de arriba)
       setLoading(false);
-      return true;
+      // Limpia cualquier error previo por si la vista lo usa directamente
+      setError(null);
+      return { ok: true };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Error inesperado al unirse";
       setError(msg);
       setLoading(false);
-      return false;
+      return { ok: false, error: msg };
     }
   }
 
@@ -141,14 +156,7 @@ export function useLiveDraw() {
   async function joinByPin(pin: number): Promise<LiveDraw | null> {
     return await getLiveDrawByPin(pin);
   }
-  // Suscripción en tiempo real al sorteo (encapsulada en el servicio)
-  useEffect(() => {
-    if (!drawId) return;
-    const unsubscribe = subscribeLiveDraw(drawId, (liveDraw: LiveDraw | null) => {
-      if (liveDraw) setDraw(liveDraw);
-    });
-    return () => unsubscribe();
-  }, [drawId]);
 
+  // Retorno
   return { loading, error, drawId, draw, create, join, cancel, start, finish, leave, restoreForHost, restoreLastJoinedDraw, joinByPin, setDraw, setDrawId, addWinner } as const;
 }

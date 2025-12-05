@@ -12,6 +12,10 @@ interface WinnerModalProps {
 export const WinnerModal: React.FC<WinnerModalProps> = ({ open, winnerName, onKeep, onRemove, onClose }) => {
   if (!open) return null;
   
+  // Separar ganadores por coma
+  const winners = winnerName.split(", ").filter(name => name.trim() !== "");
+  const isMultipleWinners = winners.length > 1;
+  
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
       {/* Confetti effect background */}
@@ -21,7 +25,7 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({ open, winnerName, onKe
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl animate-pulse"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md mx-4 animate-in zoom-in-95 duration-500">
+      <div className="relative z-10 w-full max-w-md mx-4 zoom-out-110">
         <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-neutral-900 to-neutral-800 border-2 border-purple-500/50 shadow-2xl shadow-purple-500/30">
           {/* Decorative elements */}
           <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">
@@ -42,22 +46,39 @@ export const WinnerModal: React.FC<WinnerModalProps> = ({ open, winnerName, onKe
           {/* Content */}
           <div className="flex flex-col items-center text-center mt-3">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 mb-2 animate-pulse">
-              ¡GANADOR!
+              {isMultipleWinners ? "¡GANADORES!" : "¡GANADOR!"}
             </h2>
             
-            <div className="my-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-400/50 w-full">
+            <div className="my-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-400/50 w-full max-h-64 overflow-y-auto custom-scrollbar">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="text-3xl">👑</span>
                 <span className="text-3xl">🎉</span>
                 <span className="text-3xl">👑</span>
               </div>
-              <p className="text-xl sm:text-2xl font-black text-white break-words">
-                {winnerName}
-              </p>
+              
+              {isMultipleWinners ? (
+                <div className="space-y-2">
+                  {winners.map((winner, index) => (
+                    <div key={index} className="flex items-center justify-center gap-2 py-2 border-b border-purple-400/20 last:border-0">
+                      <span className="text-purple-400 font-bold text-lg">#{index + 1}</span>
+                      <p className="text-lg sm:text-xl font-black text-white break-words">
+                        {winner}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xl sm:text-2xl font-black text-white break-words">
+                  {winnerName}
+                </p>
+              )}
             </div>
 
             <p className="text-gray-300 mb-6 text-xs sm:text-sm max-w-md">
-              ¿Deseas mantener a este participante en el sorteo para futuras rondas o eliminarlo?
+              {isMultipleWinners 
+                ? "¿Deseas mantener a estos participantes en el sorteo para futuras rondas o eliminarlos?"
+                : "¿Deseas mantener a este participante en el sorteo para futuras rondas o eliminarlo?"
+              }
             </p>
 
             {/* Action buttons */}

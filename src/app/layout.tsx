@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import HeaderGate from "@/modules/common/HeaderGate";
-import FooterGate from "@/modules/common/FooterGate";
+import HeaderGate from "@/modules/common/components/HeaderGate";
+import FooterGate from "@/modules/common/components/FooterGate";
 // If HeaderGate.tsx is at src/modules/common/HeaderGate.tsx, use:
 
 const geistSans = Geist({

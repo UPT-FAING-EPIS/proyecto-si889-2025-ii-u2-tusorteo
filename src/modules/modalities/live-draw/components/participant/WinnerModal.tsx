@@ -20,7 +20,7 @@ export const ParticipantWinnerModal: React.FC<Props> = ({ open, winners, didWin,
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl animate-pulse"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md mx-4 animate-in zoom-in-95 duration-500">
+      <div className="relative z-10 w-full max-w-md mx-4 zoom-out-110">
         <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-neutral-900 to-neutral-800 border-2 border-purple-500/50 shadow-2xl shadow-purple-500/30">
           {/* Decorative elements */}
           <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">

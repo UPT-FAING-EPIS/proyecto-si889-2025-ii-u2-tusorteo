@@ -1,5 +1,5 @@
 // ...existing code...
-import Link from "next/link";
+import ProtectedLink from "@/modules/common/components/ProtectedLink";
 
 export default function ProfilePage() {
 // ...existing code...
@@ -27,7 +27,7 @@ export default function ProfilePage() {
 
         {/* Main Action Card - Sorteo en Vivo */}
         <div className="mb-8">
-          <Link href="/modalities/live-draw">
+          <ProtectedLink href="/modalities/live-draw">
             <div className="group bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl shadow-2xl p-8 md:p-10 border border-neutral-700/50 hover:border-purple-500/50 transition-all duration-300 hover:scale-[1.01] cursor-pointer">
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-purple-500 flex items-center justify-center text-4xl shadow-2xl group-hover:shadow-purple-500/50 transition-shadow group-hover:scale-110 duration-300">
@@ -49,7 +49,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-          </Link>
+          </ProtectedLink>
         </div>
 
         {/* Coming Soon Section */}

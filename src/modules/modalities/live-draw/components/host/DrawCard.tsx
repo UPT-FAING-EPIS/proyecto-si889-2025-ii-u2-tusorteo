@@ -2,6 +2,7 @@
 import React from "react";
 import type { LiveDraw } from "../../services/liveDrawService";
 import { ParticipantList } from "../shared/ParticipantList";
+import { PinDisplay } from "./PinDisplay";
 
 interface DrawCardProps {
   draw: LiveDraw;
@@ -13,6 +14,8 @@ interface DrawCardProps {
   onPickWinner?: () => void;
   onFinish?: () => void;
   onRemoveParticipant?: (identity: { browserId?: string; name?: string }) => void;
+  winnersCount?: number;
+  onWinnersCountChange?: (count: number) => void;
 }
 
 export const DrawCard: React.FC<DrawCardProps> = ({ 
@@ -24,7 +27,9 @@ export const DrawCard: React.FC<DrawCardProps> = ({
   onCancel, 
   onPickWinner, 
   onFinish,
-  onRemoveParticipant
+  onRemoveParticipant,
+  winnersCount = 1,
+  onWinnersCountChange
 }) => {
   const isCancelled = draw.status === 'cancelled';
   const isFinished = draw.status === 'finished';
@@ -97,18 +102,7 @@ export const DrawCard: React.FC<DrawCardProps> = ({
 
         {/* PIN del sorteo */}
         {isWaiting && (
-          <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 backdrop-blur-md border border-neutral-700/50 shadow-xl">
-            <div className="flex items-center gap-2 mb-2 sm:mb-3">
-              <span className="text-xl sm:text-2xl">🔑</span>
-              <h3 className="text-sm sm:text-base font-bold text-white">PIN de Acceso</h3>
-            </div>
-            <p className="text-xs text-gray-400 mb-2">Comparte este PIN con tus participantes</p>
-            <div className="p-2.5 sm:p-3 rounded-lg bg-neutral-900/80 border-2 border-purple-500/50 text-center">
-              <span className="text-2xl sm:text-3xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400">
-                {draw.pin}
-              </span>
-            </div>
-          </div>
+          <PinDisplay pin={draw.pin} />
         )}
 
         {/* Estado del sorteo */}
@@ -137,6 +131,38 @@ export const DrawCard: React.FC<DrawCardProps> = ({
           
           {isRunning && (
             <>
+              {/* Selector de cantidad de ganadores */}
+              <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 backdrop-blur-md border border-neutral-700/50 shadow-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl sm:text-2xl">🎯</span>
+                  <h3 className="text-sm sm:text-base font-bold text-white">Cantidad de ganadores</h3>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => onWinnersCountChange && onWinnersCountChange(Math.max(1, winnersCount - 1))}
+                    disabled={winnersCount <= 1 || loading}
+                    className="w-10 h-10 rounded-lg bg-neutral-700/50 hover:bg-neutral-600/50 text-white font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                  >
+                    −
+                  </button>
+                  <div className="flex-1 text-center">
+                    <span className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+                      {winnersCount}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => onWinnersCountChange && onWinnersCountChange(Math.min(participants?.length || 1, winnersCount + 1))}
+                    disabled={winnersCount >= (participants?.length || 1) || loading}
+                    className="w-10 h-10 rounded-lg bg-neutral-700/50 hover:bg-neutral-600/50 text-white font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Máximo: {participants?.length || 0} participantes
+                </p>
+              </div>
+
               <button
                 className="group relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-bold shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
                 disabled={loading}
@@ -144,7 +170,9 @@ export const DrawCard: React.FC<DrawCardProps> = ({
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
                 <span className="text-base sm:text-lg">🎲</span>
-                <span className="relative z-10">Elegir ganador</span>
+                <span className="relative z-10">
+                  {winnersCount > 1 ? `Elegir ${winnersCount} ganadores` : 'Elegir ganador'}
+                </span>
               </button>
               
               <button

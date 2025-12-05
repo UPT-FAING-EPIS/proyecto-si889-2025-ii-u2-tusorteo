@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ProtectedLink from "@/modules/common/components/ProtectedLink";
 import SectionHeader from "@/modules/landing/components/SectionHeader";
 import ToolCard from "@/modules/landing/components/ToolCard";
 import BenefitCard from "@/modules/landing/components/BenefitCard";
@@ -6,22 +7,24 @@ import TestimonialCard from "@/modules/landing/components/TestimonialCard";
 
 const tools = [
   {
-    icon: "📸",
-    title: "Instagram Sorteo",
-    description: "Elige un ganador aleatorio de tus publicaciones de Instagram.",
-    buttonText: "Probar ahora",
-    href: "#",
-    gradient: "from-purple-500 to-pink-500",
-    shadow: "purple-500",
+    icon: "📋",
+    title: "Sorteo por Lista de Nombres",
+    description: "Elige un ganador al azar de una lista de nombres con nuestra app.",
+    buttonText: "Crear sorteo",
+    href: "/modalities/list-draw",
+    protect: false,
+    gradient: "from-yellow-500 to-orange-500",
+    shadow: "yellow-500",
   },
   {
     icon: "👥",
-    title: "Facebook Sorteo",
-    description: "Elige un ganador aleatorio de tus publicaciones de Facebook.",
-    buttonText: "Probar ahora",
+    title: "Generador de Equipos Aleatorios",
+    description: "Crea equipos equilibrados y aleatorios a partir de una lista de participantes.",
+    buttonText: "Generar equipos",
     href: "#",
     gradient: "from-blue-500 to-blue-600",
     shadow: "blue-500",
+    comingSoon: true,
   },
   {
     icon: "🎤",
@@ -29,6 +32,7 @@ const tools = [
     description: "Crea un sorteo interactivo y compártelo con tus participantes.",
     buttonText: "Crear ahora",
     href: "/modalities/live-draw",
+    protect: true,
     gradient: "from-green-500 to-emerald-600",
     shadow: "green-500",
   },
@@ -157,7 +161,7 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-12">
-            <Link
+            <ProtectedLink
               href="/modalities/live-draw"
               className="group relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold shadow-2xl hover:shadow-purple-500/60 transition-all duration-300 transform hover:scale-[1.02] hover:-translate-y-1 flex items-center gap-2 w-full sm:w-auto justify-center border border-purple-400/20 text-sm sm:text-base"
             >
@@ -167,7 +171,7 @@ export default function Home() {
               <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </Link>
+            </ProtectedLink>
             
             <Link
               href="/modalities/join-live-draw"

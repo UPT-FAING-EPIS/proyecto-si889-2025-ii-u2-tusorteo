@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation";
 import { useGetUser } from "@/modules/auth/hooks/useGetUser";
 import { DrawCard } from "@/modules/modalities/live-draw/components/host/DrawCard";
 import { WinnerModal } from "@/modules/modalities/live-draw/components/host/WinnerModal";
+import { CountdownTimer } from "@/modules/modalities/live-draw/components/host/CountdownTimer";
 import { useLiveDrawHost } from "@/modules/modalities/live-draw/hooks/useLiveDrawHost";
+import { QRCodeCanvas } from "qrcode.react";
 
 
 export default function LiveDrawPage() {
+  const [countdownOpen, setCountdownOpen] = useState(false);
   const [winnerModalOpen, setWinnerModalOpen] = useState(false);
   const [winner, setWinner] = useState<any>(null);
   const { user, loading: userLoading } = useGetUser();
   const router = useRouter();
+  // Mantener loader visible durante la redirección para evitar vista vacía
+  const [redirecting, setRedirecting] = useState(false);
   const {
     draw,
     drawId,
@@ -26,17 +31,26 @@ export default function LiveDrawPage() {
     startDraw,
     cancelDraw,
     finishDraw,
-    pickRandomParticipant,
+    winnersCount,
+    setWinnersCount,
+    resetWinnersCount,
+    pickMultipleRandomParticipants,
     removeParticipantFromDraw,
+    saveWinners,
+    removeMultipleParticipants,
   } = useLiveDrawHost(user?.id);
 
   useEffect(() => {
-    if (!userLoading && !user) {
+    if (!userLoading && !user && !redirecting) {
+      setRedirecting(true);
+      // Opcional: prefetch para acelerar el montaje de login
+      try { (router as any).prefetch && (router as any).prefetch("/login"); } catch {}
       router.replace("/login");
     }
-  }, [user, userLoading, router]);
+  }, [user, userLoading, redirecting, router]);
 
-  if (userLoading) {
+  // Mostrar siempre el loader mientras se verifica usuario o durante la redirección
+  if (userLoading || redirecting || !user) {
     return (
       <main className="h-[calc(100vh-80px)] bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 flex flex-col">
         <section className="flex-1 flex flex-col items-center justify-center px-4">
@@ -47,10 +61,6 @@ export default function LiveDrawPage() {
         </section>
       </main>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   const handleRemoveParticipant = async (identity: { browserId?: string; name?: string }) => {
@@ -158,6 +168,8 @@ export default function LiveDrawPage() {
               participants={draw.participants}
               loading={loading}
               emptyMessage="Aún no hay participantes"
+              winnersCount={winnersCount}
+              onWinnersCountChange={setWinnersCount}
               onRunDraw={async () => {
                 await startDraw();
               }}
@@ -165,44 +177,69 @@ export default function LiveDrawPage() {
                 await cancelDraw();
               }}
               onPickWinner={async () => {
-                const picked = pickRandomParticipant();
-                if (!picked) return;
-                setWinner(picked);
-                setWinnerModalOpen(true);
-                try {
-                  if (draw?.code) {
-                    const mod = await import("@/modules/modalities/live-draw/services/liveDrawService");
-                    await mod.addWinner(draw.code, { name: picked.name, browserId: picked.browserId });
-                  }
-                } catch (e) {
-                  console.error(e);
-                }
+                // Seleccionar múltiples ganadores usando el hook
+                const selectedWinners = pickMultipleRandomParticipants(winnersCount);
+                if (selectedWinners.length === 0) return;
+                
+                setWinner(selectedWinners);
+                
+                // Mostrar el temporizador primero
+                setCountdownOpen(true);
+                
+                // NO guardar los ganadores aquí - se guardará después del temporizador
               }}
               onFinish={async () => {
                 await finishDraw();
               }}
               onRemoveParticipant={handleRemoveParticipant}
             />
+            
+            {/* Countdown Timer */}
+            <CountdownTimer
+              open={countdownOpen}
+              onComplete={async () => {
+                setCountdownOpen(false);
+                setWinnerModalOpen(true);
+                // Guardar los ganadores en la base de datos DESPUÉS del temporizador
+                if (winner) {
+                  await saveWinners(Array.isArray(winner) ? winner : [winner]);
+                }
+              }}
+            />
+            
+            {/* Winner Modal */}
             <WinnerModal
               open={winnerModalOpen}
-              winnerName={(typeof winner?.name === 'string' && winner.name.trim().length > 0) ? winner.name : 'Sin nombre'}
+              winnerName={Array.isArray(winner) 
+                ? winner.map(w => (typeof w?.name === 'string' && w.name.trim().length > 0) ? w.name : 'Sin nombre').join(", ")
+                : (typeof winner?.name === 'string' && winner.name.trim().length > 0) ? winner.name : 'Sin nombre'
+              }
               onKeep={async () => {
                 setWinnerModalOpen(false);
                 setWinner(null);
+                resetWinnersCount();
               }}
               onRemove={async () => {
                 setWinnerModalOpen(false);
                 if (winner) {
-                  await removeParticipantFromDraw({
-                    browserId: winner.browserId,
-                    name: winner.name,
-                  });
+                  // Si es un array de ganadores, eliminar todos usando la función del hook
+                  if (Array.isArray(winner)) {
+                    await removeMultipleParticipants(winner);
+                  } else {
+                    // Si es un solo ganador
+                    await removeParticipantFromDraw({
+                      browserId: winner.browserId,
+                      name: winner.name,
+                    });
+                  }
                 }
                 setWinner(null);
+                resetWinnersCount();
               }}
               onClose={() => {
                 setWinnerModalOpen(false);
                 setWinner(null);
+                resetWinnersCount();
               }}
             />
           </div>
